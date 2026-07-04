@@ -1,0 +1,9 @@
+# Local backup kept during the 3D upgrade — history preserves the original, so it
+# does not need to be tracked.
+EGN Floor Plan 3D (original backup).html
+
+# OS / editor cruft
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.tmp
