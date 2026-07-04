@@ -10,13 +10,14 @@ An interactive **3D conversion** of the tentative 2D floor plan for **EGN CONNEC
 
 | File | Description |
 |------|-------------|
-| `EGN Floor Plan 3D.html` | The interactive 3D floor plan — a single, self-contained offline HTML file. Just open it in any modern browser. |
+| `Floor_Planner_version2.html` | **Latest** — the polished, presentation-ready 3D floor plan. A single, self-contained offline HTML file; just open it in any modern browser. |
+| `Floor_Planner_version1.html` | The original first-pass 3D conversion (kept for reference). |
 | `EGN Connect X Floor Plan - KEZ.pdf` | The original 2D source floor plan. |
 | `brain.md` | Design analysis of the floor plan (zones, booth sizes, visitor flow, recommendations). |
 
 ## The 3D floor plan
 
-Open `EGN Floor Plan 3D.html` in a browser — no internet connection or install required
+Open `Floor_Planner_version2.html` in a browser — no internet connection or install required
 (Three.js is embedded inside the file).
 
 **Contents modelled from the source plan**
