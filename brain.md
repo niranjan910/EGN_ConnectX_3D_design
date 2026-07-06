@@ -15,8 +15,11 @@ The floor plan follows a structured exhibition layout designed for maximum visit
   - **Entry/Exit Gate 2**
 - Entry gates are positioned on the left side to distribute visitor traffic efficiently.
 - Both gates carry **EGN CONNECT X branded banners** (entry / exit branding).
-- A **circular EGN CONNECT X branding plaza** (9 m diameter, 6 ft high) sits between the gates as the entrance centrepiece.
-- A row of **visitor service counters** lines the entrance concourse (see §7).
+- An **outdoor entrance plaza** sits in front of the gates (outside the main hall) and holds all the arrival infrastructure:
+  - A **circular EGN CONNECT X branding drum** (9 m diameter, 6 ft high) directly in front of the gates as the centrepiece.
+  - A grouped row of **visitor service counters** on the right, all facing outward toward arriving guests (see §7).
+  - A **coffee stall** with café seating on the left.
+  - People throughout the plaza (queues at the counters, guests at the coffee stall).
 
 ### 2. Zone Segmentation
 The exhibition is divided into multiple thematic zones:
@@ -62,7 +65,7 @@ Four conference halls are positioned on the right side:
 - High visibility conference area
 
 ### 7. Entrance Services (3D model — Version 2)
-A dedicated service row is modelled in the left-hand entrance concourse:
+A dedicated service area is modelled in the **outdoor entrance plaza** (outside the gates). The four counters are grouped together on the **right**, all facing **outward** toward arriving guests:
 
 | Counter | Footprint | Height | Purpose |
 |---------|-----------|--------|---------|
@@ -71,13 +74,13 @@ A dedicated service row is modelled in the left-hand entrance concourse:
 | Lost & Found | 4 m × 6 m | ~8 ft | Report or recover lost items |
 | Baggage & Deposit | 4 m × 8 m | ~8 ft | Cloakroom & baggage deposit |
 
-The Registration Counter is intentionally the largest of the four.
+The Registration Counter is intentionally the largest of the four. A **coffee stall** (with a canopy, café tables and umbrellas) sits on the **left** of the plaza.
 
 ## 3D Model Build Notes (Version 2 — `Floor_Planner_version2.html`)
 - **Uniform booth height:** every exhibition stand is built to a consistent **9 ft (2.7432 m)** wall height.
 - **Footprint accuracy:** booth stands are auto-resolved to sit **together as clean, non-overlapping blocks** matching the source plan — e.g. C1–C4 form a tight 2×2 quad. Each stand picks the orientation that fits its neighbours and keeps a thin service aisle, so no booths clip through one another (the earlier model had ~68 overlapping pairs; the corrected model has none).
 - **Gate branding:** each entry/exit gate carries an EGN CONNECT X banner.
-- **Entrance branding plaza:** a 9 m circular drum (6 ft tall) with the wordmark wrapped around the side and a logo medallion on top.
+- **Outdoor entrance plaza:** all arrival infrastructure sits *outside* the hall in a paved forecourt — the 9 m circular branding drum (6 ft tall, wordmark wrapped + logo medallion on top) in front of the gates, the four service counters grouped on the right facing outward, and a coffee stall on the left. People populate the plaza.
 - The model remains a single, self-contained offline HTML file (Three.js embedded).
 
 ## Recommended Floor Planner Structure
