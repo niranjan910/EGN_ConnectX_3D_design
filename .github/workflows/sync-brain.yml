@@ -1,0 +1,51 @@
+name: Sync brain.md to niranjan910/brain
+
+# Mirrors this repo's brain.md into niranjan910/brain at
+# "wiki/entities/EGN Connect X Floor Planner.md" whenever brain.md changes on main.
+#
+# Auth: uses an SSH deploy key (write) registered on niranjan910/brain,
+# stored as the Actions secret SYNC_DEPLOY_KEY. Same pipeline as
+# StudynLearn_live and EGN_ConnectX.
+
+on:
+  push:
+    branches: [main]
+    paths: ['brain.md']
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout EGN_ConnectX_3D_design
+        uses: actions/checkout@v4
+
+      - name: Checkout target brain repo
+        uses: actions/checkout@v4
+        with:
+          repository: niranjan910/brain
+          ref: master
+          ssh-key: ${{ secrets.SYNC_DEPLOY_KEY }}
+          path: brain-repo
+
+      - name: Copy brain.md into wiki/entities/EGN Connect X Floor Planner.md
+        run: |
+          mkdir -p "brain-repo/wiki/entities"
+          {
+            echo '<!-- AUTO-SYNCED from niranjan910/EGN_ConnectX_3D_design : brain.md — do not edit here directly -->'
+            echo
+            cat brain.md
+          } > "brain-repo/wiki/entities/EGN Connect X Floor Planner.md"
+
+      - name: Commit & push if changed
+        run: |
+          cd brain-repo
+          git config user.name  "brain-sync-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add "wiki/entities/EGN Connect X Floor Planner.md"
+          if git diff --cached --quiet; then
+            echo "brain.md unchanged in target — nothing to sync."
+          else
+            git commit -m "Sync brain.md from EGN_ConnectX_3D_design @ ${GITHUB_SHA::7}"
+            git push
+          fi
