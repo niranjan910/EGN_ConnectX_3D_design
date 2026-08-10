@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EGN CONNECT X 2026 — 3D Floor Plan</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body { font-family: Helvetica, Arial, sans-serif; color: #2e2a25; background: #f1eee8; }
+  .app { display: flex; flex-direction: column; height: 100vh; }
+  header { background: #1d1a17; color: #f5f3ef; padding: 12px 22px 10px; }
+  .hrow { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  .brand { display: flex; flex-direction: column; gap: 2px; min-width: 260px; }
+  .wordmark { font-size: 20px; font-weight: 800; letter-spacing: 0.05em; }
+  .wordmark .grad { background: linear-gradient(90deg, #60a5fa, #a78bfa, #f43f5e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .wordmark .x { color: #f43f5e; }
+  .wordmark .thin { font-weight: 400; opacity: 0.5; font-size: 15px; }
+  .sub { font-size: 11.5px; opacity: 0.65; }
+  .tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .search { display: flex; align-items: center; background: #2c2823; border: 1px solid #3d382f; border-radius: 8px; overflow: hidden; }
+  .search input { background: transparent; border: 0; outline: none; color: #f5f3ef; font-size: 13px; padding: 8px 10px; width: 150px; }
+  .search input::placeholder { color: #857d70; }
+  .search button { background: linear-gradient(90deg, #3b82f6, #8b5cf6); color: #fff; border: 0; font-size: 12.5px; font-weight: 700; padding: 8px 14px; cursor: pointer; }
+  .search.err { border-color: #e11d48; animation: shake 0.3s; }
+  @keyframes shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+  .btn { background: #2c2823; color: #d8d2c8; border: 1px solid #3d382f; border-radius: 8px; font-size: 12.5px; padding: 8px 12px; cursor: pointer; }
+  .btn:hover { background: #3a352e; color: #fff; }
+  .btn.on { background: #4338ca; border-color: #6366f1; color: #fff; }
+  .zonebar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 9px; font-size: 12px; }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid #3d382f; cursor: pointer; color: #d8d2c8; user-select: none; }
+  .chip .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .chip:hover { background: #2c2823; }
+  .chip.active { background: #2c2823; border-color: currentColor; color: #fff; }
+  .chip.static { cursor: default; opacity: 0.75; }
+  .chip.static:hover { background: transparent; }
+  .stats { margin-left: auto; font-size: 11.5px; opacity: 0.55; }
+  .stage { flex: 1; min-height: 0; position: relative; }
+  floor-3d { position: absolute; inset: 0; }
+  .hint { position: absolute; left: 16px; bottom: 14px; background: rgba(255,255,255,0.88); backdrop-filter: blur(4px);
+          border-radius: 8px; padding: 8px 14px; font-size: 12px; color: #56504a; pointer-events: none; }
+  .card { position: absolute; right: 16px; bottom: 16px; width: 250px; background: rgba(255,255,255,0.96); backdrop-filter: blur(6px);
+          border-radius: 12px; box-shadow: 0 10px 32px rgba(30,25,18,0.22); padding: 14px 16px; display: none; }
+  .card.show { display: block; }
+  .card .cid { font-size: 21px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .card .cdot { width: 13px; height: 13px; border-radius: 4px; display: inline-block; }
+  .card .czone { font-size: 12.5px; color: #6b645b; margin-top: 3px; }
+  .card .crow { display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 8px; border-top: 1px solid #eee9e0; padding-top: 8px; }
+  .card .crow b { font-size: 13px; }
+  .card .close { position: absolute; top: 8px; right: 10px; border: 0; background: transparent; font-size: 16px; color: #a09a8e; cursor: pointer; }
+</style>
+<script src="4f5a6f4e-abe1-447a-9b60-4bd57be078c9"></script>
+<script src="0c296ce5-70da-4f17-928f-8842766540b2"></script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="hrow">
+      <div class="brand">
+        <div class="wordmark">EGN <span class="grad">CONNECT</span><span class="x">X</span> <span class="thin">· 3D Floor Plan</span></div>
+        <div class="sub">Bombay Convention &amp; Exhibition Centre (BEC, NESCO), Mumbai · November 03–04, 2026</div>
+      </div>
+      <div class="tools">
+        <div class="search" id="searchBox">
+          <input id="searchInput" placeholder="Find booth… e.g. B42" spellcheck="false">
+          <button id="searchBtn">Find</button>
+        </div>
+        <button class="btn" id="btn3d">3D View</button>
+        <button class="btn" id="btnTop">Top View</button>
+        <button class="btn" id="btnRotate">⟳ Rotate</button>
+        <button class="btn on" id="btnLabels">Labels</button>
+        <button class="btn on" id="btnPeople">People</button>
+        <button class="btn on" id="btnStructure">Roof</button>
+        <button class="btn" id="btnReset">Reset</button>
+      </div>
+    </div>
+    <div class="zonebar" id="zonebar">
+      <span class="chip" data-zone="A"><span class="dot" style="background:#d9862c"></span>A · Premium</span>
+      <span class="chip" data-zone="B"><span class="dot" style="background:#3e7bc4"></span>B · Standard</span>
+      <span class="chip" data-zone="C"><span class="dot" style="background:#3f9b6e"></span>C · Clusters</span>
+      <span class="chip" data-zone="D"><span class="dot" style="background:#8b6bc7"></span>D · Mid-sized</span>
+      <span class="chip" data-zone="E"><span class="dot" style="background:#c75b72"></span>E · Sponsor</span>
+      <span class="chip" data-zone="M"><span class="dot" style="background:#3aa6a6"></span>M · Meeting</span>
+      <span class="chip static"><span class="dot" style="background:#5b6b7e"></span>Conference Halls</span>
+      <span class="chip static"><span class="dot" style="background:#8a6d4f"></span>Coffee Lounge</span>
+      <span class="chip static"><span class="dot" style="background:#e11d2f"></span>Registration &amp; Services</span>
+      <span class="stats">264 booths · 4 halls · 2 gates · 4 service desks</span>
+    </div>
+  </header>
+  <div class="stage">
+    <floor-3d id="floor" booth-height="3" show-labels="true" auto-rotate="false"></floor-3d>
+    <div class="hint">Drag to orbit · Scroll to zoom · Right-drag to pan · Click a booth for details · Double-click to reset</div>
+    <div class="card" id="card">
+      <button class="close" id="cardClose">✕</button>
+      <div class="cid"><span class="cdot" id="cardDot"></span><span id="cardId"></span></div>
+      <div class="czone" id="cardZone"></div>
+      <div class="crow" id="cardRow1"><span>Area</span><b id="cardSqm"></b></div>
+      <div class="crow" id="cardRow2"><span>Footprint</span><b id="cardDims"></b></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var ZONE_COLORS = { A: '#d9862c', B: '#3e7bc4', C: '#3f9b6e', D: '#8b6bc7', E: '#c75b72', M: '#3aa6a6', HALL: '#5b6b7e', LOUNGE: '#8a6d4f' };
+  var ZONE_NAMES = { A: 'Zone A · Premium Exhibitors', B: 'Zone B · Standard Booths', C: 'Zone C · Exhibition Clusters', D: 'Zone D · Mid-sized Blocks', E: 'Zone E · Sponsor & Feature', M: 'Meeting Zone' };
+
+  customElements.whenDefined('floor-3d').then(function () {
+    var floor = document.getElementById('floor');
+    var card = document.getElementById('card');
+    var searchBox = document.getElementById('searchBox');
+    var searchInput = document.getElementById('searchInput');
+    var activeZone = null;
+
+    function showCard(u) {
+      if (!u) { card.classList.remove('show'); return; }
+      document.getElementById('cardDot').style.background = ZONE_COLORS[u.zone] || '#999';
+      document.getElementById('cardId').textContent = u.sqm ? 'Booth ' + u.id : u.id;
+      var r1 = document.getElementById('cardRow1'), r2 = document.getElementById('cardRow2');
+      if (u.zone === 'HALL') {
+        document.getElementById('cardZone').textContent = u.sub;
+        r1.style.display = 'none'; r2.style.display = 'none';
+      } else if (u.zone === 'LOUNGE') {
+        document.getElementById('cardZone').textContent = 'Networking & refreshments';
+        r1.style.display = 'none'; r2.style.display = 'none';
+      } else {
+        document.getElementById('cardZone').textContent = ZONE_NAMES[u.zone] || u.zone;
+        r1.style.display = ''; r2.style.display = '';
+        document.getElementById('cardSqm').textContent = u.sqm + ' SQM';
+        document.getElementById('cardDims').textContent = u.w + ' m × ' + u.d + ' m';
+      }
+      card.classList.add('show');
+    }
+
+    floor.addEventListener('booth-select', function (e) { showCard(e.detail); });
+    document.getElementById('cardClose').addEventListener('click', function () { floor.clearSelection(); });
+    window.addEventListener('keydown', function (e) { if (e.key === 'Escape') floor.clearSelection(); });
+
+    function doSearch() {
+      var q = searchInput.value.trim();
+      if (!q) return;
+      searchBox.classList.remove('err');
+      if (!floor.focusBooth(q)) {
+        searchBox.classList.add('err');
+        setTimeout(function () { searchBox.classList.remove('err'); }, 900);
+      }
+    }
+    document.getElementById('searchBtn').addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+
+    document.getElementById('btn3d').addEventListener('click', function () { floor.setView('3d'); });
+    document.getElementById('btnTop').addEventListener('click', function () { floor.setView('top'); });
+    document.getElementById('btnReset').addEventListener('click', function () {
+      floor.resetView();
+      searchInput.value = '';
+      setChips(null);
+    });
+
+    function bindToggle(id, attr, initial) {
+      var btn = document.getElementById(id);
+      var on = initial;
+      btn.addEventListener('click', function () {
+        on = !on;
+        btn.classList.toggle('on', on);
+        floor.setAttribute(attr, on ? 'true' : 'false');
+      });
+    }
+    bindToggle('btnRotate', 'auto-rotate', false);
+    bindToggle('btnLabels', 'show-labels', true);
+    bindToggle('btnPeople', 'show-people', true);
+    bindToggle('btnStructure', 'show-structure', true);
+
+    var chips = Array.prototype.slice.call(document.querySelectorAll('.chip[data-zone]'));
+    function setChips(zone) {
+      activeZone = zone;
+      chips.forEach(function (c) { c.classList.toggle('active', c.dataset.zone === zone); });
+      floor.setZoneFilter(zone);
+    }
+    chips.forEach(function (c) {
+      c.addEventListener('click', function () {
+        setChips(activeZone === c.dataset.zone ? null : c.dataset.zone);
+      });
+    });
+  });
+})();
+</script>
+</body></html>
