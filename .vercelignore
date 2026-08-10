@@ -1,0 +1,3 @@
+# Dev-only: decoded/repackable source for Floor_Planner_version2.html's
+# embedded bundle. Not needed to serve the site — see _source/repack.py.
+_source
