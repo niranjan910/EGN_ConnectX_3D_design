@@ -37,8 +37,28 @@
         '#tip{position:absolute;pointer-events:none;background:rgba(24,22,19,0.94);color:#f5f3ef;' +
         'font:12px/1.5 Helvetica,Arial,sans-serif;padding:8px 11px;border-radius:8px;white-space:nowrap;' +
         'transform:translate(14px,14px);display:none;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,0.25)}' +
-        '#tip b{font-size:13px}#tip .dim{opacity:0.65}</style><div id="tip"></div>';
+        '#tip b{font-size:13px}#tip .dim{opacity:0.65}' +
+        '#compass{position:absolute;top:12px;right:12px;width:46px;height:46px;z-index:6;cursor:pointer;' +
+        'filter:drop-shadow(0 2px 6px rgba(0,0,0,0.35));-webkit-tap-highlight-color:transparent}' +
+        '#compass .ring{fill:rgba(24,22,19,0.88);stroke:#8a847a;stroke-width:1.5}' +
+        '#compass .needleN{fill:#e11d2f}#compass .needleS{fill:#cfc9be}' +
+        '#compass .lbl{font:700 9.5px Helvetica,Arial,sans-serif;fill:#f5f3ef;text-anchor:middle}' +
+        '#compass .lbl.sub{fill:#a8a196;font-size:8px}</style>' +
+        '<div id="tip"></div>' +
+        '<div id="compass" title="Click to face north">' +
+        '<svg viewBox="0 0 44 44" width="46" height="46">' +
+        '<circle class="ring" cx="22" cy="22" r="20"/>' +
+        '<g id="compassDial">' +
+        '<polygon class="needleN" points="22,5 26,22 22,18.5 18,22"/>' +
+        '<polygon class="needleS" points="22,39 26,22 22,25.5 18,22"/>' +
+        '<text class="lbl" x="22" y="12">N</text>' +
+        '<text class="lbl sub" x="22" y="36.5">S</text>' +
+        '<text class="lbl sub" x="8.5" y="25.5">W</text>' +
+        '<text class="lbl sub" x="35.5" y="25.5">E</text>' +
+        '</g></svg></div>';
       this.tip = this.shadowRoot.getElementById('tip');
+      this.compassEl = this.shadowRoot.getElementById('compass');
+      this.compassDial = this.shadowRoot.getElementById('compassDial');
       this._boothH = 3;
       this._autoRotate = false;
       this._showLabels = true;
@@ -282,6 +302,16 @@
         scene.add(wire);
       }
 
+      // ---- compass: N/S/E/W wayfinding signage ----
+      // The source floor plan carries no compass rose, so this follows the
+      // standard convention for an unmarked plan: "up" on the printed page is
+      // North. Cross-checked against the plan — Gate 1 sits above Gate 2 on
+      // the page and has the lower z here, and the conference halls (drawn on
+      // the page's right) sit at high x — so North/South are the long walls
+      // (z = -2 / z = FD+2) and West/East are the short walls (x = -2, gates
+      // side / x = FW+2, halls side).
+      this._buildCompass(FW, FD);
+
       // ---- people (instanced) ----
       this._buildPeople(data, FW, FD);
 
@@ -306,6 +336,13 @@
       this._bindControls(renderer.domElement);
       this._fly(this._home, 1800); // intro sweep
 
+      // Compass badge: click to snap the view to face north; the needle
+      // rotates every frame to always show true north relative to the
+      // current camera angle (see _updateCamera for the rotation math).
+      this.compassEl.addEventListener('click', () => {
+        this._fly({ r: this._sph.r, theta: 0, phi: this._sph.phi, tx: this._target.x, tz: this._target.z }, 700);
+      });
+
       this._ro = new ResizeObserver(() => this._resize());
       this._ro.observe(this);
       this._resize();
@@ -323,6 +360,7 @@
           this._beaconRing.scale.setScalar(1 + 0.07 * Math.sin(this._time * 3.6));
         }
         this._updateCamera();
+        this.compassDial.setAttribute('transform', 'rotate(' + (this._sph.theta * 180 / Math.PI) + ' 22 22)');
         renderer.render(scene, camera);
       };
       loop();
@@ -827,6 +865,28 @@
       return new this.THREE.Sprite(new this.THREE.SpriteMaterial({ map: tex, transparent: true }));
     }
 
+    // Circular compass badge for the four wayfinding signs (N/S/E/W).
+    _compassSprite(letter, word) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 512;
+      const ctx = c.getContext('2d');
+      const cx = 256, cy = 256, R = 236;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = '#1d1a17'; ctx.fill();
+      const gr = ctx.createLinearGradient(cx - R, 0, cx + R, 0);
+      gr.addColorStop(0, '#3b82f6'); gr.addColorStop(0.5, '#8b5cf6'); gr.addColorStop(1, '#e11d2f');
+      ctx.lineWidth = 12; ctx.strokeStyle = gr;
+      ctx.beginPath(); ctx.arc(cx, cy, R - 6, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#f5f3ef'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '800 220px Arial, Helvetica, sans-serif';
+      ctx.fillText(letter, cx, cy - 28);
+      ctx.font = '700 46px Arial, Helvetica, sans-serif';
+      ctx.fillStyle = 'rgba(245,243,239,0.78)';
+      ctx.fillText(word, cx, cy + 158);
+      const tex = new this.THREE.CanvasTexture(c);
+      tex.colorSpace = this.THREE.SRGBColorSpace; tex.anisotropy = 4;
+      return new this.THREE.Sprite(new this.THREE.SpriteMaterial({ map: tex, transparent: true }));
+    }
+
     // ================= entrance: circular branding drum =================
     _buildEntryFeature(cx, cz) {
       const THREE = this.THREE;
@@ -859,6 +919,30 @@
       pick.position.set(cx, 0.24 + H / 2, cz); pick.visible = false;
       pick.userData = { id: 'EGN CONNECT X', zone: 'BRAND', desc: 'Welcome & branding plaza', diam: 9 };
       this.scene.add(pick); this.pickMeshes.push(pick);
+    }
+
+    // ================= wayfinding: N/S/E/W compass signs =================
+    // Floated well above the roofline on posts just outside each perimeter
+    // wall, so they stay visible over booths/halls from most camera angles.
+    _buildCompass(FW, FD) {
+      const THREE = this.THREE;
+      const Y = 13, M = 3;
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0x6b645b, roughness: 0.6, metalness: 0.15 });
+      const points = [
+        { letter: 'N', word: 'NORTH', x: FW / 2, z: -2 - M },
+        { letter: 'S', word: 'SOUTH', x: FW / 2, z: FD + 2 + M },
+        { letter: 'W', word: 'WEST', x: -2 - M, z: FD / 2 },
+        { letter: 'E', word: 'EAST', x: FW + 2 + M, z: FD / 2 },
+      ];
+      points.forEach(p => {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, Y, 8), poleMat);
+        pole.position.set(p.x, Y / 2, p.z); pole.castShadow = true;
+        this.scene.add(pole);
+        const sp = this._compassSprite(p.letter, p.word);
+        sp.position.set(p.x, Y, p.z);
+        sp.scale.set(7, 7, 1);
+        this.scene.add(sp);
+      });
     }
 
     // ================= entrance: service counters =================
