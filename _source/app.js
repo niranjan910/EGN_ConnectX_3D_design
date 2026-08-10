@@ -48,8 +48,6 @@
       this._time = 0;
       this._zoneFilter = null;
       this._selected = null;
-      this._vel = { theta: 0, phi: 0, px: 0, pz: 0 };
-      this._zoomTarget = null;
     }
 
     attributeChangedCallback(name, _old, val) {
@@ -305,7 +303,6 @@
       this._target = new THREE.Vector3(FW / 2, 0, FD / 2);
       this._home = { r: Math.max(FW, FD) * 0.95, theta: -0.5, phi: 0.98, tx: FW / 2, tz: FD / 2 };
       this._sph = { r: this._home.r * 1.7, theta: -1.35, phi: 0.45 };
-      this._zoomTarget = this._sph.r;
       this._bindControls(renderer.domElement);
       this._fly(this._home, 1800); // intro sweep
 
@@ -321,7 +318,6 @@
         this._time += dt;
         if (this._autoRotate && !this._anim && !this._dragging) this._sph.theta += dt * 0.1;
         this._stepFly();
-        this._stepMomentum(dt);
         if (this._beacon.visible) {
           this._beaconMat.opacity = 0.24 + 0.13 * Math.sin(this._time * 3.6);
           this._beaconRing.scale.setScalar(1 + 0.07 * Math.sin(this._time * 3.6));
@@ -982,9 +978,6 @@
 
     _fly(to, dur) {
       const s = this._sph, t = this._target;
-      const v = this._vel;
-      v.theta = 0; v.phi = 0; v.px = 0; v.pz = 0;
-      this._zoomTarget = to.r;
       this._anim = {
         from: { r: s.r, theta: s.theta, phi: s.phi, tx: t.x, tz: t.z },
         to, t0: performance.now(), dur: dur || 900,
@@ -1003,31 +996,7 @@
       this._sph.phi = L(a.from.phi, a.to.phi);
       this._target.x = L(a.from.tx, a.to.tx);
       this._target.z = L(a.from.tz, a.to.tz);
-      if (p === 1) { this._anim = null; this._zoomTarget = this._sph.r; }
-    }
-
-    // Google-Maps-style "flick and coast": drag/pan velocity captured while
-    // dragging keeps applying (with exponential decay) after release, and
-    // wheel zoom eases toward its target instead of snapping straight there.
-    _stepMomentum(dt) {
-      const v = this._vel;
-      if (!this._dragging && !this._anim) {
-        const decay = Math.pow(0.05, dt);
-        if (Math.abs(v.theta) > 1e-5 || Math.abs(v.phi) > 1e-5) {
-          this._sph.theta += v.theta;
-          this._sph.phi = Math.min(1.5, Math.max(0.04, this._sph.phi + v.phi));
-          v.theta *= decay; v.phi *= decay;
-        } else { v.theta = 0; v.phi = 0; }
-        if (Math.abs(v.px) > 1e-4 || Math.abs(v.pz) > 1e-4) {
-          this._target.x += v.px; this._target.z += v.pz;
-          v.px *= decay; v.pz *= decay;
-        } else { v.px = 0; v.pz = 0; }
-      }
-      if (!this._anim && this._zoomTarget != null) {
-        const diff = this._zoomTarget - this._sph.r;
-        if (Math.abs(diff) > 0.02) this._sph.r += diff * Math.min(1, dt * 12);
-        else this._sph.r = this._zoomTarget;
-      }
+      if (p === 1) this._anim = null;
     }
 
     _updateCamera() {
@@ -1041,16 +1010,18 @@
       this.camera.lookAt(t);
     }
 
+    // Direct 1:1 control, no momentum/coasting and no eased zoom — this is a
+    // reference tool people use to pick out a specific booth, so the camera
+    // must stop exactly where the drag/scroll stops, not drift past it.
     _bindControls(el) {
-      let px = 0, py = 0, btn = -1, lastT = 0;
-      const ROTATE_SPEED = 0.0085; // was 0.005 — a drag now covers noticeably more orbit
+      let px = 0, py = 0, btn = -1;
+      const ROTATE_SPEED = 0.0075; // was 0.005 (too stiff) — a drag now covers noticeably more orbit
       el.style.touchAction = 'none';
       el.addEventListener('pointerdown', e => {
-        btn = e.button; px = e.clientX; py = e.clientY; lastT = performance.now();
+        btn = e.button; px = e.clientX; py = e.clientY;
         this._downAt = { x: e.clientX, y: e.clientY };
         this._dragging = true;
         this._anim = null;
-        const v = this._vel; v.theta = 0; v.phi = 0; v.px = 0; v.pz = 0;
         el.setPointerCapture(e.pointerId);
         el.style.cursor = 'grabbing';
       });
@@ -1061,34 +1032,22 @@
       });
       el.addEventListener('pointermove', e => {
         if (btn === -1) return;
-        const now = performance.now();
-        const dtms = Math.max(4, Math.min(80, now - lastT));
-        lastT = now;
         const dx = e.clientX - px, dy = e.clientY - py;
         px = e.clientX; py = e.clientY;
-        const frameScale = 16.7 / dtms; // normalise per-event delta to a ~60fps step for momentum
         if (btn === 2 || e.shiftKey) {
           const s = this._sph.r / 800;
           const th = this._sph.theta;
-          const panX = -(dx * Math.cos(th) - dy * Math.sin(th) * Math.cos(this._sph.phi)) * s;
-          const panZ = -(-dx * Math.sin(th) - dy * Math.cos(th) * Math.cos(this._sph.phi)) * s;
-          this._target.x += panX;
-          this._target.z += panZ;
-          this._vel.px = panX * frameScale; this._vel.pz = panZ * frameScale;
-          this._vel.theta = 0; this._vel.phi = 0;
+          this._target.x -= (dx * Math.cos(th) - dy * Math.sin(th) * Math.cos(this._sph.phi)) * s;
+          this._target.z -= (-dx * Math.sin(th) - dy * Math.cos(th) * Math.cos(this._sph.phi)) * s;
         } else {
-          const dTheta = -dx * ROTATE_SPEED, dPhi = -dy * ROTATE_SPEED;
-          this._sph.theta += dTheta;
-          this._sph.phi = Math.min(1.5, Math.max(0.04, this._sph.phi + dPhi));
-          this._vel.theta = dTheta * frameScale; this._vel.phi = dPhi * frameScale;
-          this._vel.px = 0; this._vel.pz = 0;
+          this._sph.theta -= dx * ROTATE_SPEED;
+          this._sph.phi = Math.min(1.5, Math.max(0.04, this._sph.phi - dy * ROTATE_SPEED));
         }
       });
       el.addEventListener('wheel', e => {
         e.preventDefault();
         this._anim = null;
-        const base = this._zoomTarget != null ? this._zoomTarget : this._sph.r;
-        this._zoomTarget = Math.min(600, Math.max(10, base * (1 + Math.sign(e.deltaY) * 0.09)));
+        this._sph.r = Math.min(600, Math.max(10, this._sph.r * (1 + Math.sign(e.deltaY) * 0.08)));
       }, { passive: false });
       el.addEventListener('contextmenu', e => e.preventDefault());
       el.addEventListener('dblclick', () => this.resetView());
