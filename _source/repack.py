@@ -61,9 +61,25 @@ if not t:
 shell_path = os.path.join(HERE, "shell.html")
 with open(shell_path, "r", encoding="utf-8") as f:
     shell_html = f.read()
-current_template = json.loads(t.group(1))
+# shell.html is itself a page carrying <script> tags (the loader's for app.js/
+# data.js plus its own inline one). JSON-encoding does NOT escape "</script>",
+# and the outer HTML tokenizer terminates *this* script element the instant it
+# sees that literal byte sequence anywhere in the text — including inside a
+# JSON string — truncating the embedded JSON well before its closing brace.
+# "\/" is a legal JSON escape for a bare solidus, so this round-trips through
+# JSON.parse() unchanged while no longer matching a literal closing tag; same
+# trick the loader script already uses for its own resourceScript below.
+current_template_raw = t.group(1)
+try:
+    current_template = json.loads(current_template_raw.replace('<\\/script', '</script'))
+except json.JSONDecodeError:
+    # Only reachable if a previous run wrote the file before this escaping fix
+    # existed, truncating the on-disk template at the first literal
+    # "</script>" — treat it as "differs" so the block below rewrites it
+    # properly rather than crashing on an already-corrupt read-back.
+    current_template = None
 if shell_html != current_template:
-    new_template_json = json.dumps(shell_html)
+    new_template_json = json.dumps(shell_html).replace('</script', '<\\/script')
     content = content[:t.start()] + '<script type="__bundler/template">' + new_template_json + '</script>' + content[t.end():]
     changed.append("shell.html")
 
