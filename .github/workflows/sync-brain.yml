@@ -1,7 +1,7 @@
 name: Sync brain.md to niranjan910/brain
 
 # Mirrors this repo's brain.md into niranjan910/brain at
-# "wiki/entities/EGN Connect X Floor Planner.md" whenever brain.md changes on main.
+# "Obsidian/wiki/entities/EGN Connect X Floor Planner.md" whenever brain.md changes on main.
 #
 # Auth: uses an SSH deploy key (write) registered on niranjan910/brain,
 # stored as the Actions secret SYNC_DEPLOY_KEY. Same pipeline as
@@ -28,21 +28,21 @@ jobs:
           ssh-key: ${{ secrets.SYNC_DEPLOY_KEY }}
           path: brain-repo
 
-      - name: Copy brain.md into wiki/entities/EGN Connect X Floor Planner.md
+      - name: Copy brain.md into Obsidian/wiki/entities/EGN Connect X Floor Planner.md
         run: |
-          mkdir -p "brain-repo/wiki/entities"
+          mkdir -p "brain-repo/Obsidian/wiki/entities"
           {
             echo '<!-- AUTO-SYNCED from niranjan910/EGN_ConnectX_3D_design : brain.md — do not edit here directly -->'
             echo
             cat brain.md
-          } > "brain-repo/wiki/entities/EGN Connect X Floor Planner.md"
+          } > "brain-repo/Obsidian/wiki/entities/EGN Connect X Floor Planner.md"
 
       - name: Commit & push if changed
         run: |
           cd brain-repo
           git config user.name  "brain-sync-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add "wiki/entities/EGN Connect X Floor Planner.md"
+          git add "Obsidian/wiki/entities/EGN Connect X Floor Planner.md"
           if git diff --cached --quiet; then
             echo "brain.md unchanged in target — nothing to sync."
           else
